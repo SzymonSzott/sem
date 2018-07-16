@@ -125,7 +125,7 @@ class SimulationRunner(object):
                                           '--out=build/optimized']
 
             # Check whether path points to a valid installation
-            subprocess.run(configuration_command, cwd=self.path,
+            subprocess.call(configuration_command, cwd=self.path,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # Build ns-3
