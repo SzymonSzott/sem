@@ -1,6 +1,7 @@
 import click
 import sem
 import ast
+import pprint
 
 
 @click.group()
@@ -9,6 +10,37 @@ def cli():
     An interface to the ns-3 Simulation Execution Manager.
     """
     pass
+
+
+@cli.command()
+@click.option("--results-dir", type=click.Path(dir_okay=True,
+                                               resolve_path=True),
+              prompt=True)
+@click.option("--show-all", is_flag=True)
+def view(results_dir, show_all):
+    """
+    See results of simulations.
+    """
+
+    campaign = sem.CampaignManager.load(results_dir)
+
+    if show_all:
+        output = '\n\n\n'.join([pprint.pformat(item) for item in
+                                campaign.db.get_complete_results()])
+    else:
+
+        # Query parameters
+        script_params = {k: [] for k in campaign.db.get_params()}
+        for param in script_params.keys():
+            user_input = click.prompt("%s" % param, default="None")
+            script_params[param] = ast.literal_eval(user_input)
+
+        # Perform the search
+        output = '\n\n\n'.join([pprint.pformat(item) for item in
+                                campaign.db.get_complete_results(
+                                    script_params)])
+    click.echo_via_pager(output)
+
 
 @cli.command()
 @click.option("--ns-3-path", type=click.Path(exists=True,

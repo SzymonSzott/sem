@@ -267,10 +267,16 @@ class DatabaseManager(object):
         # dictionary not to modify the original copy.
         query_params = {}
         for key in params:
+            if params[key] is None:
+                continue
             if not isinstance(params[key], list):
                 query_params[key] = [params[key]]
             else:
                 query_params[key] = params[key]
+
+        # Handle case where query params has no keys
+        if not query_params.keys():
+            return [dict(i) for i in self.db.table('results').all()]
 
         # Create the TinyDB query
         # In the docstring example above, this is equivalent to:
