@@ -8,6 +8,7 @@ from tqdm import tqdm
 from random import shuffle
 import numpy as np
 import xarray as xr
+from scipy.io import savemat
 import os
 from pathlib import Path
 import collections
@@ -311,7 +312,7 @@ class CampaignManager(object):
     #####################
 
     def get_results_as_numpy_array(self, parameter_space,
-                                   result_parsing_function):
+                                   result_parsing_function, runs):
         """
         Return the results relative to the desired parameter space in the form
         of a numpy array.
@@ -326,10 +327,41 @@ class CampaignManager(object):
             result_parsing_function (function): user-defined function, taking a
                 result dictionary as argument, that can be used to parse the
                 result files and return a list of values.
+            runs (int): number of runs to gather for each parameter
+                combination.
         """
         return np.squeeze(np.array(self.get_space({},
                                                   parameter_space,
-                                                  result_parsing_function)))
+                                                  result_parsing_function,
+                                                  runs)))
+
+    def save_to_mat_file(self, parameter_space,
+                         result_parsing_function,
+                         filename, runs):
+        """
+        Return the results relative to the desired parameter space in the form
+        of a .mat file.
+
+        Note that the input parameter space can contain lists of any length,
+        but any single-element list will have the corresponding dimension
+        collapsed via the numpy.squeeze function.
+
+        Args:
+            parameter_space (dict): dictionary containing
+                parameter/list-of-values pairs.
+            result_parsing_function (function): user-defined function, taking a
+                result dictionary as argument, that can be used to parse the
+                result files and return a list of values.
+            filename (path): name of output .mat file.
+            runs (int): number of runs to gather for each parameter
+                combination.
+        """
+        return savemat(
+            filename,
+            {'results':
+             self.get_results_as_numpy_array(parameter_space,
+                                             result_parsing_function,
+                                             runs)})
 
     def get_results_as_xarray(self, parameter_space,
                               result_parsing_function,

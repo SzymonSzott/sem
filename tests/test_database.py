@@ -32,6 +32,8 @@ def test_db_creation_from_scratch(tmpdir, config, ns_3):
 
 
 def test_db_loading(config, db, tmpdir):
+    campaign_path = config['campaign_dir']
+
     # Note that the db fixture initializes a db for us
     # Load the database file
     db = DatabaseManager.load(config['campaign_dir'])
@@ -42,6 +44,21 @@ def test_db_loading(config, db, tmpdir):
     # Check for a correctly loaded configuration
     del config['campaign_dir']
     assert db.get_config() == config
+
+    # Modify the campaign database, removing an entry
+    db.db.purge_table('config')
+
+    # Wrong database format is currently detected
+    with pytest.raises(Exception):
+        DatabaseManager.load(campaign_path)
+
+
+def test_exception_throwing(db):
+    with pytest.raises(ValueError):
+        DatabaseManager.load('./non_absolute_path')
+        DatabaseManager.load('/abs/path/to/non/existing/file')
+        DatabaseManager.new('./non_absolute_path')
+
 
 
 #####################

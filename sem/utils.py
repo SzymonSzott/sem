@@ -30,3 +30,7 @@ def list_param_combinations(param_ranges):
 
     return [dict(zip(param_ranges, v)) for v in
             product(*param_ranges.values())]
+
+
+def constant_array(result):
+    return [0, 1, 2, 3]

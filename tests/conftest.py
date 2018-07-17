@@ -71,6 +71,19 @@ def parameter_combination():
         'time': 'false'
     }
 
+@pytest.fixture(scope='function')
+def parameter_combination_2():
+    return {
+        'dict': '/usr/share/dict/web2a',
+        'time': 'true'
+    }
+
+@pytest.fixture(scope='function')
+def parameter_combination_range():
+    return {
+        'dict': ['/usr/share/dict/web2', '/usr/share/dict/web2a'],
+        'time': ['false', 'true']
+    }
 
 @pytest.fixture(scope='function')
 def manager(ns_3_compiled, config):
