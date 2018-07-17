@@ -10,6 +10,7 @@ import numpy as np
 import xarray as xr
 import os
 from pathlib import Path
+import collections
 if DRMAA_AVAILABLE:
     from .gridrunner import GridRunner
 
@@ -347,12 +348,17 @@ class CampaignManager(object):
             runs (int): the number of runs to export for each parameter
                 combination.
         """
-        np_array = np.squeeze(np.array(self.get_space({}, parameter_space,
-                                                      result_parsing_function,
-                                                      runs)))
+        np_array = np.squeeze(
+            np.array(
+                self.get_space(
+                    {},
+                    collections.OrderedDict(
+                        [(k, v) for k, v in parameter_space.items()]),
+                    result_parsing_function,
+                    runs)))
 
         # Create a parameter space only containing the variable parameters
-        clean_parameter_space = {}
+        clean_parameter_space = collections.OrderedDict()
         for key, value in parameter_space.items():
             if isinstance(value, list) and len(value) > 1:
                 clean_parameter_space[key] = value
