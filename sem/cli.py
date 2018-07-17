@@ -15,11 +15,13 @@ def cli():
 @cli.command()
 @click.option("--results-dir", type=click.Path(dir_okay=True,
                                                resolve_path=True),
-              prompt=True)
-@click.option("--show-all", is_flag=True)
+              prompt=True,
+              help='Directory containing the simulation results.')
+@click.option("--show-all", is_flag=True,
+              help='Show all results and skip query')
 def view(results_dir, show_all):
     """
-    See results of simulations.
+    View results of simulations.
     """
 
     campaign = sem.CampaignManager.load(results_dir)
@@ -29,11 +31,7 @@ def view(results_dir, show_all):
                                 campaign.db.get_complete_results()])
     else:
 
-        # Query parameters
-        script_params = {k: [] for k in campaign.db.get_params()}
-        for param in script_params.keys():
-            user_input = click.prompt("%s" % param, default="None")
-            script_params[param] = ast.literal_eval(user_input)
+        script_params = query_parameters(campaign.db.get_params())
 
         # Perform the search
         output = '\n\n\n'.join([pprint.pformat(item) for item in
@@ -53,10 +51,10 @@ def view(results_dir, show_all):
 @click.option("--no-optimization", default=False, is_flag=True)
 def run(ns_3_path, results_dir, script, no_optimization):
     """
-    Run simulations from the command line.
+    Run simulations.
     """
     if sem.utils.DRMAA_AVAILABLE:
-        click.echo("Detected available DRMAA cluster: Using GridRunner.")
+        click.echo("Detected available DRMAA cluster: using GridRunner.")
         runner_type = "GridRunner"
     else:
         runner_type = "ParallelRunner"
@@ -72,11 +70,19 @@ def run(ns_3_path, results_dir, script, no_optimization):
     # Print campaign info
     click.echo(campaign)
 
-    # Query parameters
-    script_params = {k: [] for k in campaign.db.get_params()}
-    for param in script_params.keys():
-        script_params[param] = ast.literal_eval(click.prompt("%s" % param))
-
     # Run the simulations
+    script_params = query_parameters(campaign.db.get_params())
     campaign.run_missing_simulations(script_params,
                                      runs=click.prompt("Runs", type=int))
+
+
+def query_parameters(param_list):
+        # Query parameters
+        script_params = {k: [] for k in param_list}
+
+        # Order keys in alphabetical order to ensure reproducibility
+        for param in sorted(script_params.keys()):
+            user_input = click.prompt("%s" % param, default="None")
+            script_params[param] = ast.literal_eval(user_input)
+
+        return script_params
