@@ -53,6 +53,21 @@ def test_db_loading(config, db, tmpdir):
         DatabaseManager.load(campaign_path)
 
 
+def test_db_does_not_delete_user_data(config, db, tmpdir):
+    # Add a file to the test_campaign folder
+    with open(
+            os.path.join(
+                config['campaign_dir'],
+                'precious_file.txt'),
+            'a') as my_file:
+        my_file.write("Precious content")
+
+    # Try creating another database overwriting this one
+    config['overwrite'] = True
+    with pytest.raises(Exception):
+        DatabaseManager.new(**config)
+
+
 def test_exception_throwing(db):
     with pytest.raises(ValueError):
         DatabaseManager.load('./non_absolute_path')

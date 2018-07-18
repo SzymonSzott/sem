@@ -62,6 +62,21 @@ class DatabaseManager(object):
         if Path(campaign_dir).exists() and not overwrite:
             raise FileExistsError("The specified directory already exists")
         elif Path(campaign_dir).exists() and overwrite:
+            # Verify we are not deleting files belonging to the user
+            campaign_dir_name = os.path.basename(campaign_dir)
+            folder_contents = set(os.listdir(campaign_dir))
+            allowed_files = set(
+                ['data', '%s.json' % campaign_dir_name] +
+                # Allow hidden files (like .DS_STORE in macos)
+                [os.path.basename(os.path.normpath(f)) for f in
+                 glob.glob(os.path.join(campaign_dir, ".*"))])
+
+            print(folder_contents)
+            print(allowed_files)
+            if(not folder_contents.issubset(allowed_files)):
+                raise ValueError("The specified directory cannot be overwritten"
+                                 " because it contains user files.")
+            # This operation destroys data.
             shutil.rmtree(campaign_dir)
 
         # Create the directory and database file in it
@@ -99,20 +114,25 @@ class DatabaseManager(object):
 
         # Verify file exists
         if not Path(campaign_dir).exists():
-            raise ValueError("File does not exist")
+            raise ValueError("Directory does not exist")
 
         # Extract filename from campaign dir
         filename = "%s.json" % os.path.split(campaign_dir)[1]
         filepath = os.path.join(campaign_dir, filename)
 
-        # Read TinyDB instance from file
-        tinydb = TinyDB(filepath)
+        try:
+            # Read TinyDB instance from file
+            tinydb = TinyDB(filepath)
 
-        # Make sure the configuration is a valid dictionary
-        if set(tinydb.table('config').all()[0].keys()) != set(['script',
-                                                               'params',
-                                                               'commit']):
-            raise ValueError("Existing database is corrupt")
+            # Make sure the configuration is a valid dictionary
+            assert set(
+                tinydb.table('config').all()[0].keys()) == set(['script',
+                                                                'params',
+                                                                'commit'])
+        except:
+            # Remove the database instance created by tinydb
+            os.remove(filepath)
+            raise ValueError("Specified campaign directory seems corrupt")
 
         return cls(tinydb, campaign_dir)
 

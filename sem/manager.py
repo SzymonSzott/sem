@@ -83,7 +83,8 @@ class CampaignManager(object):
                 simulations locally), GridRunner (for running simulations using
                 a DRMAA-compatible parallel task scheduler)
             overwrite (bool): whether to overwrite already existing
-                campaign_dir folders
+                campaign_dir folders. This deletes the directory if and only if
+                it only contains files that were detected to be created by sem.
             optimized (bool): whether to configure the runner to employ an
                 optimized ns-3 build.
         """
@@ -93,23 +94,20 @@ class CampaignManager(object):
 
         # Verify if the specified campaign is already available
         if Path(campaign_dir).exists() and not overwrite:
-            try:
-                manager = CampaignManager.load(campaign_dir, ns_path,
-                                               runner_type=runner_type,
-                                               optimized=optimized)
+            # Try loading
+            manager = CampaignManager.load(campaign_dir, ns_path,
+                                            runner_type=runner_type,
+                                            optimized=optimized)
 
-                if manager.db.get_script() == script:
-                    return manager
-                else:
-                    del manager
-
-            except ValueError:
-                pass  # Go on with the database creation
+            if manager.db.get_script() == script:
+                return manager
+            else:
+                del manager
 
         # Initialize runner
         runner = CampaignManager.create_runner(ns_path, script,
-                                               runner_type=runner_type,
-                                               optimized=optimized)
+                                            runner_type=runner_type,
+                                            optimized=optimized)
 
         # Get list of parameters to save in the DB
         params = runner.get_available_parameters()
@@ -119,10 +117,10 @@ class CampaignManager(object):
 
         # Create a database manager from the configuration
         db = DatabaseManager.new(script=script,
-                                 params=params,
-                                 commit=commit,
-                                 campaign_dir=campaign_dir,
-                                 overwrite=overwrite)
+                                params=params,
+                                commit=commit,
+                                campaign_dir=campaign_dir,
+                                overwrite=overwrite)
 
         return cls(db, runner)
 
