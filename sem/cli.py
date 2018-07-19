@@ -31,7 +31,8 @@ def view(results_dir, show_all):
                                 campaign.db.get_complete_results()])
     else:
 
-        script_params = query_parameters(campaign.db.get_params())
+        script_params = query_parameters(campaign.db.get_params(),
+                                         default=None)
 
         # Perform the search
         output = '\n\n\n'.join([pprint.pformat(item) for item in
@@ -71,18 +72,18 @@ def run(ns_3_path, results_dir, script, no_optimization):
     click.echo(campaign)
 
     # Run the simulations
-    script_params = query_parameters(campaign.db.get_params())
+    script_params = query_parameters(campaign.db.get_params(), default=None)
     campaign.run_missing_simulations(script_params,
                                      runs=click.prompt("Runs", type=int))
 
 
-def query_parameters(param_list):
+def query_parameters(param_list, default=None):
         # Query parameters
         script_params = {k: [] for k in param_list}
 
         # Order keys in alphabetical order to ensure reproducibility
         for param in sorted(script_params.keys()):
-            user_input = click.prompt("%s" % param, default="None")
+            user_input = click.prompt("%s" % param, default=default)
             script_params[param] = ast.literal_eval(user_input)
 
         return script_params
